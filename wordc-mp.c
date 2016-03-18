@@ -123,12 +123,9 @@ int main(int argc, char* argv[])
 
             Node * head = generate(readPipes[processNum]);
 			close(readPipes[processNum]);
-			printf(head->word);
-
 
 
 			//outputToFile(writePipes[processNum]);
-            printf("%i", processNum);
 
 
         }
@@ -266,50 +263,52 @@ Node* generate(int pipe)
 	char* oneWord;
 	
 
-	char buf;
+	char c;
 	Node* head;
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
 		
-	while (read(pipe, &buf, 1) != 0) //this loop runs until we reach the end of the section, reads first letter of word
-	{ 
-		
-		i = 0;
-
-		oneWord = malloc(128*sizeof(char));
-		do{ //this loop runs until we have a single word stored in "oneWord"		
-
-			if(buf >= 65 && buf <= 90)
-			{
-				oneWord[i] = tolower(buf);
-				i++;
-			}
-			else if((buf >= 97 && buf <= 122) || (buf >= 192 && buf <= 255) || (buf >= 48 && buf <= 57))
-			{
-				oneWord[i] = buf;
-				i++;
-			}
+	while(read(pipe, &c, 1)!=0) 
+	{ //this loop runs until we reach the end of the file
+			i = 0;
 			
-		}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
+			oneWord = malloc(128*sizeof(char));
+			while(c != ' ' && c!= '\n' && c!= '\t')
+			{						
+				if(c >= 65 && c <= 90)
+				{
+					oneWord[i] = tolower(c);
+					i++;
+				}
+				else if((c >= 97 && c <= 122) || (c >= 192 && c <= 255) || (c >= 48 && c <= 57))
+				{
+					oneWord[i] = c;
+					i++;
+				}
+				read(pipe, &c, 1);
+				
+			}
 
-		if(oneWord[0] != NULL) //handles multiple spaces/newlines
-		{
-		if(first == 1)
-		{
-			head = malloc(sizeof(struct wordNode));
-			head -> word = oneWord;
-			head -> count = 1;
-			first = 0;
+			if(oneWord[0] != NULL) //handles multiple spaces/newlines
+			{
+
+				if(first == 1)
+				{
+					head = malloc(sizeof(struct wordNode));
+					head -> word = oneWord;
+
+					head -> count = 1;
+					first = 0;
+				}
+				
+				else
+				{
+					head = searchAndPlace(oneWord, head);
+				}
+			}
+
 		}
-		
-		else
-		{
-			head = searchAndPlace(oneWord, head);
-		}
-		}
-		
-	}
 
 	return head;
 	
