@@ -62,6 +62,8 @@ int main(int argc, char* argv[])
 
         if(pid != 0)//parent side
         {
+		printf("reached parent\n");
+			outputToFile(outfile, generate(infile));
             for(i = 0; i<numberOfProcesses; i++) //close read pipes and write chunks
             {
                 close(readPipes[i]);
@@ -78,12 +80,13 @@ int main(int argc, char* argv[])
 
         else//child side
         {
+			printf("reached child \n");
             close(writePipes[processNum]);
 
             printf(fgetc(readPipes[processNum]));
         }
 
-        outputToFile(argv[2], generate(argv[1]));
+        //outputToFile(outfile, generate(infile));
     }   
 	
 	/*	
