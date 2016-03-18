@@ -106,11 +106,6 @@ int main(int argc, char* argv[])
 
         else//child side
         {
-<<<<<<< HEAD
-			
-			printf("reached child \n");
-=======
->>>>>>> origin/master
             close(writePipes[processNum]);
             generate(readPipes[processNum])
 
