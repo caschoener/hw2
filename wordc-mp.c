@@ -13,9 +13,9 @@ typedef struct wordNode
 
 
 
-Node* generate(FILE*);
+Node* generate(int);
 Node* searchAndPlace(char*, Node*);
-void outputToFile(FILE*, Node*);
+void outputToFile(int, Node*);
 
 
 
@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
 
         else//child side
         {
+			
 			printf("reached child \n");
             close(writePipes[processNum]);
             char buf[1];
@@ -94,15 +95,9 @@ int main(int argc, char* argv[])
 
         }
 
-        //outputToFile(outfile, generate(infile));
     }   
 	
-	/*	
-	else
-	{
-		outputToFile(outfile, generate(infile));
-	}	
-	*/
+	
 	
 
 	gettimeofday(&end, NULL);
@@ -126,75 +121,63 @@ int main(int argc, char* argv[])
 
 
 
-Node* generate(FILE* file)
-{
+Node* generate(int pipe)
+{	
 	char* oneWord;
 	
 
-	int c;
+	int buf;
 	Node* head;
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
 	
-	
-	
-	
-	
-	if(file == NULL)
-	{
-		printf("Could not open file \n");
-		return NULL;
-	}
-	else	
-	{
-		do{ //this loop runs until we reach the end of the file
-			i = 0;
-			
-			oneWord = malloc(128*sizeof(char));
-			do{ //this loop runs until we have a single word stored in "oneWord"
-	            while (read(readPipes[processNum], buf, 1) != 0)
-	            {
-	            	printf(buf);
-	            }				
-	            if(feof(file))
-				{
-					break;
-				}				
-				if(c >= 65 && c <= 90)
-				{
-					oneWord[i] = tolower(c);
-					i++;
-				}
-				else if((c >= 97 && c <= 122) || (c >= 192 && c <= 255) || (c >= 48 && c <= 57))
-				{
-					oneWord[i] = c;
-					i++;
-				}
-				
-			}while(c != ' ' && c!= '\n' && c!= '\t'); //words are separated by space or newline
-
-			if(oneWord[0] != NULL) //handles multiple spaces/newlines
-			{
-			if(first == 1)
-			{
-				head = malloc(sizeof(struct wordNode));
-				head -> word = oneWord;
-				head -> count = 1;
-				first = 0;
-			}
-			
-			else
-			{
-				head = searchAndPlace(oneWord, head);
-			}
-			}
-			
-		}while(c != EOF);
 		
-		fclose(file);
-		return head;
+	
+	while (read(pipe, buf, 1) != 0) //this loop runs until we reach the end of the section
+	{ 
+		
+		i = 0;
+		
+		oneWord = malloc(128*sizeof(char));
+		do{ //this loop runs until we have a single word stored in "oneWord"			
+			if(read(pipe, buf, 1) != 0)
+			{
+				break;
+			}				
+			if(buf >= 65 && buf <= 90)
+			{
+				oneWord[i] = tolower(buf);
+				i++;
+			}
+			else if((buf >= 97 && buf <= 122) || (buf >= 192 && buf <= 255) || (buf >= 48 && buf <= 57))
+			{
+				oneWord[i] = buf;
+				i++;
+			}
+			
+		}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
+
+		if(oneWord[0] != NULL) //handles multiple spaces/newlines
+		{
+		if(first == 1)
+		{
+			head = malloc(sizeof(struct wordNode));
+			head -> word = oneWord;
+			head -> count = 1;
+			first = 0;
+		}
+		
+		else
+		{
+			head = searchAndPlace(oneWord, head);
+		}
+		}
+		
 	}
+	
+	return head;
+	
 }
 
 Node* searchAndPlace(char* key, Node* head)
@@ -248,7 +231,7 @@ Node* searchAndPlace(char* key, Node* head)
 	return head;					
 }
 
-void outputToFile(FILE* file, Node* head)
+void outputToFile(int pipe, Node* head)
 {
 	
 
