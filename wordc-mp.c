@@ -56,34 +56,39 @@ int main(int argc, char* argv[])
             writePipes[i] = newFD[1];
 
             pid = fork();
+            processNum = i;
+
         }
         //parent sends each child a 1/n chunk of infile, then handles first chunk
         //child waits for 
 
         if(pid != 0)//parent side
         {
-		printf("reached parent\n");
-			outputToFile(outfile, generate(infile));
+
             for(i = 0; i<numberOfProcesses; i++) //close read pipes and write chunks
             {
                 close(readPipes[i]);
-                sleep(5); //wait for child pipe to close maybe
                 char testmsg[] = "test write\n";
+
+                printf("%i\n", i);
                 write(writePipes[i], testmsg, sizeof(testmsg));
-                sleep(5);
                 write(writePipes[i], testmsg, sizeof(testmsg));
                 close(writePipes[i]);
-                processNum = i;
                
             }
+            outputToFile(outfile, generate(infile));
+
         }
 
         else//child side
         {
 			printf("reached child \n");
             close(writePipes[processNum]);
+            char buf[30];
+            read(readPipes[processNum], buf, 20);
+            printf("PARENT: read \"%s\"\n", buf);
 
-            printf(fgetc(readPipes[processNum]));
+
         }
 
         //outputToFile(outfile, generate(infile));
