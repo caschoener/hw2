@@ -11,8 +11,8 @@ typedef struct wordNode
 	struct wordNode* next;
 }Node;
 
-
-
+Node* merge(Node*, Node*);
+Node* listFromChild(int);
 Node* generate(int);
 Node* searchAndPlace(char*, Node*);
 void outputToFile(Node*);
@@ -101,23 +101,37 @@ int main(int argc, char* argv[])
                 }
                 fclose(file);
                 close(writePipes[i]);
-               
             }
+			
+			headArray = malloc(numberOfProcesses * sizeof(struct wordNode));
+			for(i = 0; i < numberOfProcesses; i++)
+			{
+				open(readPipes[i]);
+				head[i] = listFromChild(readPipes[i]);
+			}
+			
+			Node* currA, currB, finalHead;
+			
+			
+			for(i = 0; i < numberOfProcesses -1; i++)
+			{
+				
+				
+			}
+
 
         }
 
         else//child side
         {
             close(writePipes[processNum]);
-<<<<<<< HEAD
+
             generate(readPipes[processNum]);
 			close(readPipes[processNum]);
 			outputToFile(writePipes[processNum]);
-=======
             printf("reached child");
 
             outputToFile(generate(readPipes[processNum]));
->>>>>>> origin/master
 
         }
 
@@ -145,7 +159,109 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+Node* merge(Node* a, Node* b) 
+{
+	Node* result = NULL;
+	 
+	  /* Base cases */
+	if (a == NULL) 
+		return(b);
+	else if (b==NULL) 
+		return(a);
+	 
+	/* Pick either a or b, and recur */
+	if (a->word < b->word) 
+	{
+		result = a;
+		result->next = SortedMerge(a->next, b);
+	}
+	else if(a->word = b->word)
+	{
+		a->count += b->count;
+		result = a;
+		result->next = SortedMerge(a->next, b->next);
+			
+	}
+	else
+	{
+		result = b;
+		result->next = SortedMerge(a, b->next);
+	}
+	
+	return(result);
+}
 
+
+Node* listFromChild(int pipe)
+{	
+	char* oneWord;
+	
+
+	int buf;
+	Node* head;
+	Node* curr;
+	int i = 0;
+	int first = 1; //use as boolean, true if function is processing the first word of a text
+		
+	
+		
+	
+	while (read(pipe, buf, 1) != 0) //this loop runs until we reach the end of the section
+	{ 
+		
+		i = 0;
+		
+		
+		numArr = malloc(10*sizeof(char));
+		oneWord = malloc(128*sizeof(char));
+		do{ //this loop runs until we have a single word stored in "oneWord"			
+			if(read(pipe, buf, 1) != 0)
+			{
+				break;
+			}				
+			
+			oneWord[i] = buf;
+			i++;
+		
+			
+		}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
+
+		if(oneWord[0] != NULL) //handles multiple spaces/newlines
+		{
+			do{ //this loop runs until we have the corresponding number to "oneWord" word stored in "numArr"			
+				if(read(pipe, buf, 1) != 0)
+				{
+					break;
+				}				
+				
+				numArr[i] = buf;
+				i++;
+			
+				
+			}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
+			
+			if(first == 1)
+			{
+				head = malloc(sizeof(struct wordNode));
+				head -> word = oneWord;
+				head -> count = atoi(numArr);
+				first = 0;
+				curr = head;
+			}
+			else
+			{
+				Node *w = malloc(sizeof(*curr));
+				w -> word = key;
+				w -> count = atoi(numArr);
+				curr -> next = w;
+			}
+		}
+		
+	}
+	
+	return head;
+	
+}
 
 Node* generate(int pipe)
 {	
