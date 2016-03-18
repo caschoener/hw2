@@ -64,34 +64,55 @@ int main(int argc, char* argv[])
 
         if(pid != 0)//parent side
         {
+        	FILE* file;
+        	int length;
+        	file = fopen(argv[1], "r");
+        	fseek(file, 0, SEEK_END);
+        	length = ftell(file);
+        	rewind(file);
 
             for(i = 0; i<numberOfProcesses; i++) //close read pipes and write chunks
             {
                 close(readPipes[i]);
-                char testmsg[] = "test write\n";
+                char c;
 
-                printf("%i\n", i);
-                write(writePipes[i], testmsg, sizeof(testmsg));
-                write(writePipes[i], testmsg, sizeof(testmsg));
+                while(ftell(file) < i*length/numberOfProcesses)
+                {
+                	c = fgetc(file)
+                	write(writePipes[i], c, sizeof(char));
+                	if(feof(file))
+					{
+						break;
+					}
+                }
+
+                while (c != ' ' || '\n' || '\t')
+                {
+                	c = fgetc(file)
+                	write(writePipes[i], c, sizeof(char));
+                	if(feof(file))
+					{
+						break;
+					}
+                }
+                fclose(file);
                 close(writePipes[i]);
                
             }
+
             outputToFile(outfile, generate(infile));
 
         }
 
         else//child side
         {
+<<<<<<< HEAD
 			
 			printf("reached child \n");
+=======
+>>>>>>> origin/master
             close(writePipes[processNum]);
-            char buf[1];
-            while (read(readPipes[processNum], buf, 1) != 0)
-            {
-            	printf(buf);
-            }
-            printf("PARENT: read \"%s\"\n", buf);
-
+            generate(readPipes[processNum])
 
         }
 
