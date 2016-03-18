@@ -15,7 +15,7 @@ typedef struct wordNode
 
 Node* generate(int);
 Node* searchAndPlace(char*, Node*);
-void outputToFile(int, Node*);
+void outputToFile(Node*);
 
 
 
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 {
 	FILE *timeF;
 	
-	FILE *infile = fopen(argv[1], "r");
+	FILE *file = fopen(argv[1], "r");
 	
 	FILE *outfile = fopen(argv[2], "w");
 	
@@ -64,22 +64,26 @@ int main(int argc, char* argv[])
 
         if(pid != 0)//parent side
         {
-        	FILE* file;
+
         	int length;
-        	file = fopen(argv[1], "r");
         	fseek(file, 0, SEEK_END);
         	length = ftell(file);
-        	rewind(file);
-
+        	rewind(file);	
             for(i = 0; i<numberOfProcesses; i++) //close read pipes and write chunks
             {
                 close(readPipes[i]);
                 char c;
 
+
                 while(ftell(file) < i*length/numberOfProcesses)
-                {
-                	c = fgetc(file)
-                	write(writePipes[i], c, sizeof(char));
+                {      
+
+                	printf("1\n");
+
+                	c = fgetc(file);
+
+                	printf(c); //write(writePipes[i], c, sizeof(char));
+
                 	if(feof(file))
 					{
 						break;
@@ -88,8 +92,8 @@ int main(int argc, char* argv[])
 
                 while (c != ' ' || '\n' || '\t')
                 {
-                	c = fgetc(file)
-                	write(writePipes[i], c, sizeof(char));
+                	c = fgetc(file);
+                	printf(c); //write(writePipes[i], c, sizeof(char));
                 	if(feof(file))
 					{
 						break;
@@ -100,14 +104,14 @@ int main(int argc, char* argv[])
                
             }
 
-            outputToFile(outfile, generate(infile));
-
         }
 
         else//child side
         {
             close(writePipes[processNum]);
-            generate(readPipes[processNum])
+            printf("reached child");
+
+            outputToFile(generate(readPipes[processNum]));
 
         }
 
@@ -247,15 +251,13 @@ Node* searchAndPlace(char* key, Node* head)
 	return head;					
 }
 
-void outputToFile(int pipe, Node* head)
+void outputToFile(Node* head)
 {
 	
 
 	do
 	{
-		fprintf(file, "%s %d\n", head -> word, head -> count);
+		printf("%s %d\n", head -> word, head -> count);
 		head = head -> next;
 	}while(head != NULL);
-
-	fclose(file);
 }
