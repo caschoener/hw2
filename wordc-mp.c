@@ -23,11 +23,10 @@ void outputToFile(Node*);
 int main(int argc, char* argv[])
 {
 	FILE *timeF;
-	
+
 	FILE *file = fopen(argv[1], "r");
-	
+
 	FILE *outfile = fopen(argv[2], "w");
-	
 	long time;	
 	
 	struct timeval start, end;	
@@ -64,54 +63,53 @@ int main(int argc, char* argv[])
 
         if(pid != 0)//parent side
         {
-
         	int length;
+
         	fseek(file, 0, SEEK_END);
         	length = ftell(file);
-        	rewind(file);	
-            for(i = 0; i<numberOfProcesses; i++) //close read pipes and write chunks
-            {
-                close(readPipes[i]);
-                char c;
 
+        	rewind(file);
+            for(i = 1; i<=(numberOfProcesses); i++) //close read pipes and write chunks
+            {
+        		sleep(1); //avoid race conditions
+                close(readPipes[i]);
+                char c [1];
 
                 while(ftell(file) < i*length/numberOfProcesses)
-                {      
-
-                	printf("1\n");
-
-                	c = fgetc(file);
-
-                	printf(c); //write(writePipes[i], c, sizeof(char));
-
-                	if(feof(file))
-					{
-						break;
-					}
-                }
-
-                while (c != ' ' || '\n' || '\t')
                 {
-                	c = fgetc(file);
-                	printf(c); //write(writePipes[i], c, sizeof(char));
-                	if(feof(file))
-					{
-						break;
-					}
+                	c[0] = fgetc(file);
+
+                    //printf("%i\n", c);
+                	write(writePipes[i], c, sizeof(c));
+
                 }
-                fclose(file);
+
+                while (c != ' ' && c != '\n' && c!= '\t' && c != EOF)
+                {
+                	c[0] = fgetc(file);
+
+                	write(writePipes[i], c, sizeof(c));
+
+                }
+
                 close(writePipes[i]);
                
             }
-
+            sleep(10000);
+            fclose(file);
         }
 
         else//child side
         {
             close(writePipes[processNum]);
-            printf("reached child");
+
+            char buf[200];
+            read(readPipes[processNum], buf, 200);
+            printf("\"%s\"\n", buf);
+
 
             outputToFile(generate(readPipes[processNum]));
+            printf("2\n");
 
         }
 
@@ -151,20 +149,19 @@ Node* generate(int pipe)
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
-	
 		
-	
 	while (read(pipe, buf, 1) != 0) //this loop runs until we reach the end of the section
 	{ 
 		
 		i = 0;
-		
+
 		oneWord = malloc(128*sizeof(char));
 		do{ //this loop runs until we have a single word stored in "oneWord"			
 			if(read(pipe, buf, 1) != 0)
 			{
 				break;
 			}				
+
 			if(buf >= 65 && buf <= 90)
 			{
 				oneWord[i] = tolower(buf);
