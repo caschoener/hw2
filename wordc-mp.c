@@ -72,11 +72,11 @@ int main(int argc, char* argv[])
 
             for(i = 0; i<(numberOfProcesses); i++) //close read pipes and write chunks
             {
-        		sleep(1); //avoid race conditions
+        		sleep(.1); //avoid race conditions
                 close(readPipes[i]);
                 char *c = malloc(sizeof(char));
 
-                while(ftell(file) < i*length/numberOfProcesses)
+                while(ftell(file) < (i+1)*length/numberOfProcesses)
                 {
                 	*c = fgetc(file);
 
@@ -87,7 +87,6 @@ int main(int argc, char* argv[])
                 while (*c != ' ' && *c != '\n' && *c != '\t' && *c != EOF)
                 {
                 	*c = fgetc(file);
-                    //printf("%c\n", *c);
 
                 	write(writePipes[i], c, sizeof(c));
 
@@ -125,14 +124,16 @@ int main(int argc, char* argv[])
             char buf;
             while (read(readPipes[processNum], &buf, 1) != 0)
             {
-            	printf("%c", buf);
+            	
+            		printf("%c", buf);
+
 
             }
 
-            //generate(readPipes[processNum]);
+            generate(readPipes[processNum]);
 			close(readPipes[processNum]);
-			//outputToFile(writePipes[processNum]);
-            printf("reached child\n");
+			outputToFile(writePipes[processNum]);
+            printf("%i", processNum);
 
 
         }
@@ -270,20 +271,20 @@ Node* generate(int pipe)
 	char* oneWord;
 	
 
-	int buf;
+	ch`e buf;
 	Node* head;
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
 		
-	while (read(pipe, buf, 1) != 0) //this loop runs until we reach the end of the section
+	while (read(pipe, &buf, 1) != 0) //this loop runs until we reach the end of the section
 	{ 
 		
 		i = 0;
 
 		oneWord = malloc(128*sizeof(char));
 		do{ //this loop runs until we have a single word stored in "oneWord"			
-			if(read(pipe, buf, 1) != 0)
+			if(read(pipe, &buf, 1) != 0)
 			{
 				break;
 			}				
