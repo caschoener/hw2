@@ -84,8 +84,11 @@ int main(int argc, char* argv[])
         {
 			printf("reached child \n");
             close(writePipes[processNum]);
-            char buf[30];
-            read(readPipes[processNum], buf, 20);
+            char buf[1];
+            while (read(readPipes[processNum], buf, 1) != 0)
+            {
+            	printf(buf);
+            }
             printf("PARENT: read \"%s\"\n", buf);
 
 
@@ -150,8 +153,11 @@ Node* generate(FILE* file)
 			
 			oneWord = malloc(128*sizeof(char));
 			do{ //this loop runs until we have a single word stored in "oneWord"
-				c = fgetc(file);
-				if(feof(file))
+	            while (read(readPipes[processNum], buf, 1) != 0)
+	            {
+	            	printf(buf);
+	            }				
+	            if(feof(file))
 				{
 					break;
 				}				
