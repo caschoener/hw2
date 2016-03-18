@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
 			close(readPipes[processNum]);
 
 
-			//outputToFile(writePipes[processNum]);
+			outputToFile(head);
 
 
         }
@@ -367,13 +367,13 @@ Node* searchAndPlace(char* key, Node* head)
 
 void outputToFile(Node* head)
 {
-	open(pipe);
+	//open(pipe);
 	
-	dup2(pipe, 1);
+	//dup2(pipe, 1);
 	
 	do
 	{
-		printf("%s %d \n", head -> word, head -> count);
+		printf("%s %i \n", head -> word, head -> count);
 		head = head -> next;
 	}while(head != NULL);
 
