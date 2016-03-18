@@ -1,8 +1,9 @@
 
-#include<sys/time.h>
-#include<time.h>
-#include<stdio.h>
-#include<unistd.h>
+#include <sys/time.h>
+#include <time.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 typedef struct wordNode
 {
@@ -13,113 +14,77 @@ typedef struct wordNode
 
 
 
-Node* generate(FILE*);
+Node* generate(char*);
 Node* searchAndPlace(char*, Node*);
-void outputToFile(FILE*, Node*);
+void outputToFile(char*, Node*);
 
 
 
 
 int main(int argc, char* argv[])
 {
+
 	FILE *timeF;
-	
-	FILE *infile = fopen(argv[1], "r");
-	
-	FILE *outfile = fopen(argv[2], "w");
-	
 	long time;	
 	
 	struct timeval start, end;	
 	
 	gettimeofday(&start, NULL);
 
-	if (argc != 5)
-	{
-		printf("Incorrect number of arguments, please specify in order: input file, output file, runtime output file, and number of processes \n");
-	}
-    else
-    {
-		int numberOfProcesses = atoi(argv[4]);
-        int* writePipes = malloc(numberOfProcesses*sizeof(int));
-        int* readPipes = malloc(numberOfProcesses*sizeof(int));
 
-        int newFD[2];
-        int pid = -1;
-        int processNum = 0;
-		int i;
 
-        for(i = 0; (i<numberOfProcesses && pid !=0);i++) //parent generates children and pipes until limit, breaks if child
-        {
-            pipe(newFD);
-            readPipes[i] = newFD[0];
-            writePipes[i] = newFD[1];
 
-            pid = fork();
-            processNum = i;
-
-        }
-        //parent sends each child a 1/n chunk of infile, then handles first chunk
-        //child waits for 
-
-        if(pid != 0)//parent side
-        {
-        	FILE* file;
-        	int length;
-        	file = fopen(argv[1], "r");
-        	fseek(file, 0, SEEK_END);
-        	length = ftell(file);
-        	rewind(file);
-
-            for(i = 0; i<numberOfProcesses; i++) //close read pipes and write chunks
-            {
-                close(readPipes[i]);
-                char c;
-
-                while(ftell(file) < i*length/numberOfProcesses)
-                {
-                	c = fgetc(file)
-                	write(writePipes[i], c, sizeof(char));
-                	if(feof(file))
-					{
-						break;
-					}
-                }
-
-                while (c != ' ' || '\n' || '\t')
-                {
-                	c = fgetc(file)
-                	write(writePipes[i], c, sizeof(char));
-                	if(feof(file))
-					{
-						break;
-					}
-                }
-                fclose(file);
-                close(writePipes[i]);
-               
-            }
-
-            outputToFile(outfile, generate(infile));
-
-        }
-
-        else//child side
-        {
-            close(writePipes[processNum]);
-            generate(readPipes[processNum])
-
-        }
-
-        //outputToFile(outfile, generate(infile));
-    }   
 	
-	/*	
+	if (argc != 5)
+	{	
+		printf("Incorrect numbgffhjuments, please specify an input filename folllowed by an output filename \n");
+	}	
 	else
 	{
-		outputToFile(outfile, generate(infile));
+		int* writePipes = malloc(argv[4]*sizeof(pipe));
+		int* readPipes = malloc(argv[4]*sizeof(pipe));
+
+		int newFD[2];
+		int pid = -1;
+		int processNum = 0;
+
+		for(int i = 0; i<argv[4] && pid !=0;i++) //parent generates children and pipes until limit, breaks if child
+		{
+			pipe(newFD);
+			readPipes[i] = newFD[0];
+			writePipes[i] = newFD[1];
+
+			pid = fork();
+		}
+		//parent sends each child a 1/n chunk of infile, then handles first chunk
+		//child waits for 
+
+		if(pid == 0)//parent side
+		{
+			for(int i = 0; i<argv[4]; i++) //close read pipes and write chunks
+			{
+				close(readPipes[i]);
+				sleep(5); //wait for child pipe to close maybe
+				char testmsg[] = "test write\n";
+				write(writePipes[i], testmsg, sizeof(testmsg))
+				sleep(5);
+				write(writePipes[i], testmsg, sizeof(testmsg))
+				close(writePipes[i]);
+				processNum = i;
+				print("pid==0");
+			}
+		}
+
+		else//child side
+		{
+			close(writePipes[processNum]);
+
+			int nbytes = read(readPipes[processNum], readbuffer, sizeof(readbuffer));
+            printf("Received string: %s", readbuffer);
+		}
+
+		outputToFile(argv[2], generate(argv[1]));
 	}	
-	*/
 	
 
 	gettimeofday(&end, NULL);
@@ -143,7 +108,7 @@ int main(int argc, char* argv[])
 
 
 
-Node* generate(FILE* file)
+Node* generate(char* inputFile)
 {
 	char* oneWord;
 	
@@ -153,14 +118,14 @@ Node* generate(FILE* file)
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
-	
+	FILE *file = fopen(inputFile, "r");
 	
 	
 	
 	
 	if(file == NULL)
 	{
-		printf("Could not open file \n");
+		printf("Could not open %s \n", inputFile);
 		return NULL;
 	}
 	else	
@@ -170,11 +135,8 @@ Node* generate(FILE* file)
 			
 			oneWord = malloc(128*sizeof(char));
 			do{ //this loop runs until we have a single word stored in "oneWord"
-	            while (read(readPipes[processNum], buf, 1) != 0)
-	            {
-	            	printf(buf);
-	            }				
-	            if(feof(file))
+				c = fgetc(file);
+				if(feof(file))
 				{
 					break;
 				}				
@@ -265,9 +227,12 @@ Node* searchAndPlace(char* key, Node* head)
 	return head;					
 }
 
-void outputToFile(FILE* file, Node* head)
+void outputToFile(char* outputFile, Node* head)
 {
 	
+	
+	FILE *file;
+	file = fopen(outputFile, "w");
 
 	do
 	{
