@@ -69,24 +69,25 @@ int main(int argc, char* argv[])
         	length = ftell(file);
 
         	rewind(file);
-            for(i = 1; i<=(numberOfProcesses); i++) //close read pipes and write chunks
+
+            for(i = 0; i<(numberOfProcesses); i++) //close read pipes and write chunks
             {
         		sleep(1); //avoid race conditions
                 close(readPipes[i]);
-                char c [1];
+                char *c = malloc(sizeof(char));
 
                 while(ftell(file) < i*length/numberOfProcesses)
                 {
-                	c[0] = fgetc(file);
+                	*c = fgetc(file);
 
-                    //printf("%i\n", c);
-                	write(writePipes[i], c, sizeof(c));
+                	write(writePipes[i], c, 1);
 
                 }
 
-                while (c != ' ' && c != '\n' && c!= '\t' && c != EOF)
+                while (*c != ' ' && *c != '\n' && *c != '\t' && *c != EOF)
                 {
-                	c[0] = fgetc(file);
+                	*c = fgetc(file);
+                    //printf("%c\n", *c);
 
                 	write(writePipes[i], c, sizeof(c));
 
@@ -94,14 +95,15 @@ int main(int argc, char* argv[])
 
                 close(writePipes[i]);
             }
-            sleep(10000);
+
+            sleep(100); //so we can focus on debugging first half
             fclose(file);
 			
-			headArray = malloc(numberOfProcesses * sizeof(struct wordNode));
+			Node** headArray = malloc(numberOfProcesses * sizeof(struct wordNode));
 			for(i = 0; i < numberOfProcesses; i++)
 			{
 				open(readPipes[i]);
-				head[i] = listFromChild(readPipes[i]);
+				headArray[i] = listFromChild(readPipes[i]);
 			}
 			
 			Node* currA, currB, finalHead;
@@ -120,17 +122,18 @@ int main(int argc, char* argv[])
         {
             close(writePipes[processNum]);
 
-            char buf[200];
-            read(readPipes[processNum], buf, 200);
-            printf("\"%s\"\n", buf);
+            char buf;
+            while (read(readPipes[processNum], &buf, 1) != 0)
+            {
+            	printf("%c", buf);
 
-            generate(readPipes[processNum]);
+            }
+
+            //generate(readPipes[processNum]);
 			close(readPipes[processNum]);
-			outputToFile(writePipes[processNum]);
-            printf("reached child");
+			//outputToFile(writePipes[processNum]);
+            printf("reached child\n");
 
-            outputToFile(generate(readPipes[processNum]));
-            printf("2\n");
 
         }
 
@@ -172,19 +175,19 @@ Node* merge(Node* a, Node* b)
 	if (a->word < b->word) 
 	{
 		result = a;
-		result->next = SortedMerge(a->next, b);
+		result->next = merge(a->next, b);
 	}
 	else if(a->word = b->word)
 	{
 		a->count += b->count;
 		result = a;
-		result->next = SortedMerge(a->next, b->next);
+		result->next = merge(a->next, b->next);
 			
 	}
 	else
 	{
 		result = b;
-		result->next = SortedMerge(a, b->next);
+		result->next = merge(a, b->next);
 	}
 	
 	return(result);
@@ -211,8 +214,8 @@ Node* listFromChild(int pipe)
 		i = 0;
 		
 		
-		numArr = malloc(10*sizeof(char));
-		oneWord = malloc(128*sizeof(char));
+		char *numArr = malloc(10*sizeof(char));
+		char *oneWord = malloc(128*sizeof(char));
 		do{ //this loop runs until we have a single word stored in "oneWord"			
 			if(read(pipe, buf, 1) != 0)
 			{
@@ -250,7 +253,7 @@ Node* listFromChild(int pipe)
 			else
 			{
 				Node *w = malloc(sizeof(*curr));
-				w -> word = key;
+				w -> word = oneWord;
 				w -> count = atoi(numArr);
 				curr -> next = w;
 			}
