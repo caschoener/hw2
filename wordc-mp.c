@@ -12,9 +12,9 @@ typedef struct wordNode
 
 
 
-Node* generate(char*);
+Node* generate(FILE*);
 Node* searchAndPlace(char*, Node*);
-void outputToFile(char*, Node*);
+void outputToFile(FILE*, Node*);
 
 
 
@@ -22,6 +22,11 @@ void outputToFile(char*, Node*);
 int main(int argc, char* argv[])
 {
 	FILE *timeF;
+	
+	FILE *infile = fopen(argv[1], "r");
+	
+	FILE *outfile = fopen(argv[2], "w");
+	
 	long time;	
 	
 	struct timeval start, end;	
@@ -31,11 +36,11 @@ int main(int argc, char* argv[])
 	
 	if (argc != 5)
 	{
-		printf("Incorrect number of arguments, please specify an input filename folllowed by an output filename \n");
+		printf("Incorrect number of arguments, please specify in order: input file, output file, runtime output file, and number of processes \n");
 	}	
 	else
 	{
-		outputToFile(argv[2], generate(argv[1]));
+		outputToFile(outfile, generate(infile));
 	}	
 	
 
@@ -60,7 +65,7 @@ int main(int argc, char* argv[])
 
 
 
-Node* generate(char* inputFile)
+Node* generate(FILE* file)
 {
 	char* oneWord;
 	
@@ -70,14 +75,14 @@ Node* generate(char* inputFile)
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
-	FILE *file = fopen(inputFile, "r");
+	
 	
 	
 	
 	
 	if(file == NULL)
 	{
-		printf("Could not open %s \n", inputFile);
+		printf("Could not open file \n");
 		return NULL;
 	}
 	else	
@@ -179,12 +184,9 @@ Node* searchAndPlace(char* key, Node* head)
 	return head;					
 }
 
-void outputToFile(char* outputFile, Node* head)
+void outputToFile(FILE* file, Node* head)
 {
 	
-	
-	FILE *file;
-	file = fopen(outputFile, "w");
 
 	do
 	{
