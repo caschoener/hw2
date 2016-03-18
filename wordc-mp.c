@@ -15,7 +15,7 @@ Node* merge(Node*, Node*);
 Node* listFromChild(int);
 Node* generate(int);
 Node* searchAndPlace(char*, Node*);
-void outputToFile(Node*);
+void outputToPipe(int, Node*);
 
 
 
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
 			close(readPipes[processNum]);
 
 
-			outputToFile(head);
+			outputToPipe(writePipes[processNum], head);
 
 
         }
@@ -365,7 +365,7 @@ Node* searchAndPlace(char* key, Node* head)
 	return head;					
 }
 
-void outputToFile(Node* head)
+void outputToPipe(int pipe, Node* head)
 {
 	//open(pipe);
 	
