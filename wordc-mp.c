@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
                 {
                 	*c = fgetc(file);
 
-                	write(writePipes[i], c, sizeof(c));
+                	write(writePipes[i], c, 1);
 
                 }
 
@@ -121,18 +121,13 @@ int main(int argc, char* argv[])
         {
             close(writePipes[processNum]);
 
-            char buf;
-            while (read(readPipes[processNum], &buf, 1) != 0)
-            {
-            	
-            		printf("%c", buf);
-
-
-            }
-
-            generate(readPipes[processNum]);
+            Node * head = generate(readPipes[processNum]);
 			close(readPipes[processNum]);
-			outputToFile(writePipes[processNum]);
+			printf(head->word);
+
+
+
+			//outputToFile(writePipes[processNum]);
             printf("%i", processNum);
 
 
@@ -271,23 +266,19 @@ Node* generate(int pipe)
 	char* oneWord;
 	
 
-	ch`e buf;
+	char buf;
 	Node* head;
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
 		
 		
-	while (read(pipe, &buf, 1) != 0) //this loop runs until we reach the end of the section
+	while (read(pipe, &buf, 1) != 0) //this loop runs until we reach the end of the section, reads first letter of word
 	{ 
 		
 		i = 0;
 
 		oneWord = malloc(128*sizeof(char));
-		do{ //this loop runs until we have a single word stored in "oneWord"			
-			if(read(pipe, &buf, 1) != 0)
-			{
-				break;
-			}				
+		do{ //this loop runs until we have a single word stored in "oneWord"		
 
 			if(buf >= 65 && buf <= 90)
 			{
@@ -319,7 +310,7 @@ Node* generate(int pipe)
 		}
 		
 	}
-	
+
 	return head;
 	
 }
