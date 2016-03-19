@@ -1,8 +1,9 @@
 
-#include<sys/time.h>
-#include<time.h>
-#include<stdio.h>
-#include<unistd.h>
+#include <sys/time.h>
+#include <time.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 typedef struct wordNode
 {
@@ -43,7 +44,12 @@ int main(int argc, char* argv[])
         int* writePipes = malloc(numberOfProcesses*sizeof(int));
         int* readPipes = malloc(numberOfProcesses*sizeof(int));
 
+        int* writePipes2 = malloc(numberOfProcesses*sizeof(int));
+        int* readPipes2 = malloc(numberOfProcesses*sizeof(int));
+
         int newFD[2];
+        int newFD2[2];
+
         int pid = -1;
         int processNum = 0;
 		int i;
@@ -53,13 +59,15 @@ int main(int argc, char* argv[])
             pipe(newFD);
             readPipes[i] = newFD[0];
             writePipes[i] = newFD[1];
+            pipe2(newFD2);
+            readPipes2[i] = newFD2[0];
+            writePipes2[i] = newFD2[1];
 
             pid = fork();
             processNum = i;
 
         }
         //parent sends each child a 1/n chunk of infile, then handles first chunk
-        //child waits for 
 
         if(pid != 0)//parent side
         {
@@ -79,7 +87,6 @@ int main(int argc, char* argv[])
                 while(ftell(file) < (i+1)*length/numberOfProcesses)
                 {
                 	*c = fgetc(file);
-
                 	write(writePipes[i], c, 1);
 
                 }
@@ -95,24 +102,33 @@ int main(int argc, char* argv[])
                 close(writePipes[i]);
             }
 
-            sleep(100); //so we can focus on debugging first half
             fclose(file);
-			
+
 			Node** headArray = malloc(numberOfProcesses * sizeof(struct wordNode));
 			for(i = 0; i < numberOfProcesses; i++)
 			{
-				open(readPipes[i]);
-				headArray[i] = listFromChild(readPipes[i]);
+				open(readPipes2[i]);
+
+				headArray[i] = listFromChild(readPipes2[i]);
+
+				printf("%s %i \n", headArray[i] -> word, headArray[i] -> count);
 			}
+
+			Node* finalHead = headArray[0];
 			
-			Node* currA, currB, finalHead;
 			
-			
-			for(i = 0; i < numberOfProcesses -1; i++)
+			for(i = 1; i < numberOfProcesses; i++)
 			{
-				
-				
+
+				finalHead = merge(finalHead, headArray[i]);
 			}
+ 
+				do
+				{
+					//printf("%s %i \n", finalHead -> word, finalHead -> count);
+					finalHead = finalHead -> next;
+				}while(finalHead != NULL);
+
 
 
         }
@@ -124,8 +140,7 @@ int main(int argc, char* argv[])
             Node * head = generate(readPipes[processNum]);
 			close(readPipes[processNum]);
 
-
-			outputToPipe(writePipes[processNum], head);
+			outputToPipe(writePipes2[processNum], head);
 
 
         }
@@ -157,7 +172,8 @@ int main(int argc, char* argv[])
 Node* merge(Node* a, Node* b) 
 {
 	Node* result = NULL;
-	 
+	 		printf("merge\n");
+
 	  /* Base cases */
 	if (a == NULL) 
 		return(b);
@@ -165,13 +181,14 @@ Node* merge(Node* a, Node* b)
 		return(a);
 	 
 	/* Pick either a or b, and recur */
-	if (a->word < b->word) 
+	if (strcmp(a->word, b->word) < 0) //string a < string b  
 	{
 		result = a;
 		result->next = merge(a->next, b);
 	}
-	else if(a->word = b->word)
+	else if(strcmp(a->word, b->word) == 0) //string a = string b
 	{
+
 		a->count += b->count;
 		result = a;
 		result->next = merge(a->next, b->next);
@@ -179,6 +196,7 @@ Node* merge(Node* a, Node* b)
 	}
 	else
 	{
+
 		result = b;
 		result->next = merge(a, b->next);
 	}
@@ -190,9 +208,8 @@ Node* merge(Node* a, Node* b)
 Node* listFromChild(int pipe)
 {	
 	char* oneWord;
-	
 
-	int buf;
+	char buf;
 	Node* head;
 	Node* curr;
 	int i = 0;
@@ -201,7 +218,7 @@ Node* listFromChild(int pipe)
 	
 		
 	
-	while (read(pipe, buf, 1) != 0) //this loop runs until we reach the end of the section
+	do //this loop runs until we reach the end of the input
 	{ 
 		
 		i = 0;
@@ -210,49 +227,60 @@ Node* listFromChild(int pipe)
 		char *numArr = malloc(10*sizeof(char));
 		char *oneWord = malloc(128*sizeof(char));
 		do{ //this loop runs until we have a single word stored in "oneWord"			
-			if(read(pipe, buf, 1) != 0)
+			if(read(pipe, &buf, 1) == 0)
 			{
 				break;
-			}				
+			}			
 			
 			oneWord[i] = buf;
 			i++;
+
 		
 			
 		}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
-
+		
+			while (buf == ' ')
+				{
+					read(pipe, &buf, 1);
+				}	
 		if(oneWord[0] != NULL) //handles multiple spaces/newlines
 		{
 			do{ //this loop runs until we have the corresponding number to "oneWord" word stored in "numArr"			
-				if(read(pipe, buf, 1) != 0)
-				{
-					break;
-				}				
+				
+
 				
 				numArr[i] = buf;
 				i++;
+				if(read(pipe, &buf, 1) == 0)
+				{
+					break;
+				}
 			
 				
 			}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
-			
+
 			if(first == 1)
 			{
+				char wordcount[5];
+				strcpy(wordcount, numArr);
 				head = malloc(sizeof(struct wordNode));
 				head -> word = oneWord;
-				head -> count = atoi(numArr);
+				head -> count = atoi(wordcount);
 				first = 0;
 				curr = head;
 			}
 			else
 			{
+				char wordcount[5];
+				strcpy(wordcount, numArr);
 				Node *w = malloc(sizeof(*curr));
 				w -> word = oneWord;
-				w -> count = atoi(numArr);
+				w -> count = atoi(wordcount);
 				curr -> next = w;
 			}
 		}
 		
-	}
+	}while (buf != EOF);
 	
 	return head;
 	
@@ -272,7 +300,6 @@ Node* generate(int pipe)
 	while(read(pipe, &c, 1)!=0) 
 	{ //this loop runs until we reach the end of the file
 			i = 0;
-			
 			oneWord = malloc(128*sizeof(char));
 			while(c != ' ' && c!= '\n' && c!= '\t')
 			{						
@@ -367,15 +394,29 @@ Node* searchAndPlace(char* key, Node* head)
 
 void outputToPipe(int pipe, Node* head)
 {
-	//open(pipe);
-	
-	//dup2(pipe, 1);
-	
+;	
+	char space[1] = " ";
+	char count[100];
 	do
 	{
-		printf("%s %i \n", head -> word, head -> count);
+		snprintf(count, 100, "%d", head->count);	
+
+		write(pipe, head->word, strlen(head->word));
+		write(pipe, space, 1);
+		write(pipe, count, strlen(count));
+		write(pipe, space, 1);
+
 		head = head -> next;
-	}while(head != NULL);
+
+	}while(head!=NULL);
+	
+
+	
+	// do
+	// {
+	// 	printf("%s %i \n", head -> word, head -> count);
+	// 	head = head -> next;
+	// }while(head != NULL);
 
 	close(pipe);
 }
