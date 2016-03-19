@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
             pipe(newFD);
             readPipes[i] = newFD[0];
             writePipes[i] = newFD[1];
-            pipe2(newFD2);
+            pipe(newFD2);
             readPipes2[i] = newFD2[0];
             writePipes2[i] = newFD2[1];
 
@@ -108,10 +108,13 @@ int main(int argc, char* argv[])
 			for(i = 0; i < numberOfProcesses; i++)
 			{
 				open(readPipes2[i]);
-
 				headArray[i] = listFromChild(readPipes2[i]);
 
-				printf("%s %i \n", headArray[i] -> word, headArray[i] -> count);
+				close(readPipes2[i]);
+
+
+
+				//printf("%s %i \n", headArray[i] -> word, headArray[i] -> count);
 			}
 
 			Node* finalHead = headArray[0];
@@ -122,12 +125,12 @@ int main(int argc, char* argv[])
 
 				finalHead = merge(finalHead, headArray[i]);
 			}
- 
 				do
 				{
-					//printf("%s %i \n", finalHead -> word, finalHead -> count);
+					printf("%s, %i \n", finalHead -> word, finalHead -> count);
 					finalHead = finalHead -> next;
 				}while(finalHead != NULL);
+ 
 
 
 
@@ -172,7 +175,6 @@ int main(int argc, char* argv[])
 Node* merge(Node* a, Node* b) 
 {
 	Node* result = NULL;
-	 		printf("merge\n");
 
 	  /* Base cases */
 	if (a == NULL) 
@@ -208,15 +210,13 @@ Node* merge(Node* a, Node* b)
 Node* listFromChild(int pipe)
 {	
 	char* oneWord;
-
+	int flag = 1;
 	char buf;
 	Node* head;
 	Node* curr;
 	int i = 0;
 	int first = 1; //use as boolean, true if function is processing the first word of a text
-		
-	
-		
+				
 	
 	do //this loop runs until we reach the end of the input
 	{ 
@@ -224,40 +224,45 @@ Node* listFromChild(int pipe)
 		i = 0;
 		
 		
-		char *numArr = malloc(10*sizeof(char));
+		char *numArr = malloc(128*sizeof(char));
 		char *oneWord = malloc(128*sizeof(char));
 		do{ //this loop runs until we have a single word stored in "oneWord"			
-			if(read(pipe, &buf, 1) == 0)
+			if(flag == 0 || read(pipe, &buf, 1) == 0 || buf == '~')
 			{
-				break;
-			}			
+				flag = 0;
+			}
+			if (buf >= 48 && buf <= 122)
+			{
+				oneWord[i] = buf;
+				i++;
+			}
+		
 			
-			oneWord[i] = buf;
-			i++;
+		}while(buf != ' ' && buf!= '\n' && buf!= '\t' && flag != 0); //words are separated by space or newline
 
-		
-			
-		}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
-		
-			while (buf == ' ')
+		while (buf == ' ' && flag != 0)
+			{
+				if(flag == 0 || read(pipe, &buf, 1) == 0 || buf == '~')
 				{
-					read(pipe, &buf, 1);
-				}	
+					flag = 0;
+				}
+			}
 		if(oneWord[0] != NULL) //handles multiple spaces/newlines
 		{
 			do{ //this loop runs until we have the corresponding number to "oneWord" word stored in "numArr"			
 				
-
-				
+				i=0;
 				numArr[i] = buf;
 				i++;
-				if(read(pipe, &buf, 1) == 0)
+				if(flag == 0 || read(pipe, &buf, 1) == 0 || buf == '~')
 				{
-					break;
+					flag = 0;
 				}
-			
 				
-			}while(buf != ' ' && buf!= '\n' && buf!= '\t'); //words are separated by space or newline
+			}while(buf != ' ' && buf!= '\n' && buf!= '\t' && flag != 0); //words are separated by space or newline
+
+			if(flag == 1)
+			{
 
 			if(first == 1)
 			{
@@ -277,11 +282,13 @@ Node* listFromChild(int pipe)
 				w -> word = oneWord;
 				w -> count = atoi(wordcount);
 				curr -> next = w;
+				curr=curr->next;
+			}
 			}
 		}
-		
-	}while (buf != EOF);
-	
+
+	}while (flag == 1);		printf("done\n");
+
 	return head;
 	
 }
@@ -396,6 +403,8 @@ void outputToPipe(int pipe, Node* head)
 {
 ;	
 	char space[1] = " ";
+	char end[1] = "~";
+	char ctest[1] = "1";
 	char count[100];
 	do
 	{
@@ -408,15 +417,12 @@ void outputToPipe(int pipe, Node* head)
 
 		head = head -> next;
 
-	}while(head!=NULL);
-	
 
-	
-	// do
-	// {
-	// 	printf("%s %i \n", head -> word, head -> count);
-	// 	head = head -> next;
-	// }while(head != NULL);
+	}while(head!=NULL);
+	write(pipe, end, 1);
+	write(pipe, end, 1);
+	write(pipe, end, 1);
+
 
 	close(pipe);
 }
